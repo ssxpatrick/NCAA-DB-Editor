@@ -1,8 +1,7 @@
 name: Build and Release ClickOnce
 
 on:
-  push:
-    branches: [main]   # change to master if that's your default branch
+  workflow_dispatch:   # Manual trigger only
 
 permissions:
   contents: write      # required to create releases
@@ -35,7 +34,7 @@ jobs:
           tag_name: release-${{ github.sha }}
           name: Release ${{ github.sha }}
           body: |
-            Automatic ClickOnce build from commit ${{ github.sha }}
+            Manual ClickOnce build from commit ${{ github.sha }}
             
             Download the ZIP and extract it to get the ClickOnce package.
           files: NCAA_XDBE-ClickOnce.zip
