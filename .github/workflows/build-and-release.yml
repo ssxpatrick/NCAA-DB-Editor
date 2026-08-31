@@ -26,7 +26,7 @@ jobs:
 
       - name: Zip the publish folder
         run: |
-          Compress-Archive -Path publish/* -DestinationPath NCAA_XDBE-ClickOnce.zip
+          Compress-Archive -Path NCAA_XDBE\bin\Release\net8.0-windows\publish\* -DestinationPath NCAA_XDBE.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
