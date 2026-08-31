@@ -1,0 +1,45 @@
+name: Build and Release ClickOnce
+
+on:
+  push:
+    branches: [main]   # change to master if that's your default branch
+
+permissions:
+  contents: write      # required to create releases
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # Adjust to the version your project needs (e.g. 8.0.x, 9.0.x, etc.)
+          dotnet-version: '8.0.x'
+
+      - name: Publish ClickOnce package
+        run: |
+          dotnet publish NCAA_XDBE/NCAA_XDBE.csproj -c Release
+
+      - name: Zip the publish folder
+        run: |
+          Compress-Archive -Path publish/* -DestinationPath NCAA_XDBE-ClickOnce.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: release-${{ github.sha }}
+          name: Release ${{ github.sha }}
+          body: |
+            Automatic ClickOnce build from commit ${{ github.sha }}
+            
+            Download the ZIP and extract it to get the ClickOnce package.
+          files: NCAA_XDBE-ClickOnce.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
