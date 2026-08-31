@@ -1,4 +1,4 @@
-name: Build and Release ClickOnce
+name: Build and Release
 
 on:
   workflow_dispatch:   # Manual trigger only
@@ -20,7 +20,7 @@ jobs:
           # Adjust to the version your project needs (e.g. 8.0.x, 9.0.x, etc.)
           dotnet-version: '8.0.x'
 
-      - name: Publish ClickOnce package
+      - name: Publish
         run: |
           dotnet publish NCAA_XDBE/NCAA_XDBE.csproj -c Release
 
@@ -34,10 +34,10 @@ jobs:
           tag_name: release-${{ github.sha }}
           name: Release ${{ github.sha }}
           body: |
-            Manual ClickOnce build from commit ${{ github.sha }}
+            Manual build from commit ${{ github.sha }}
             
-            Download the ZIP and extract it to get the ClickOnce package.
-          files: NCAA_XDBE-ClickOnce.zip
+            Download the ZIP and extract it to get the package.
+          files: NCAA_XDBE.zip
           draft: false
           prerelease: false
         env:
