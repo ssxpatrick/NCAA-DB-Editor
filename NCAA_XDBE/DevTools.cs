@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-// using System.Runtime.Remoting.Metadata.W3cXsd2001;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
-
+﻿// using System.Runtime.Remoting.Metadata.W3cXsd2001;
 namespace DB_EDITOR
 {
     partial class MainEditor : Form
@@ -62,7 +54,7 @@ namespace DB_EDITOR
 
         private void DevRandomizeFaceButton_Click(object sender, EventArgs e)
         {
-            RandomizeRecruitFace("PLAY");
+            RandomizeRecruitHead("PLAY");
         }
 
         private void DevCalcOVRButton_Click(object sender, EventArgs e)
@@ -676,14 +668,13 @@ namespace DB_EDITOR
 
         private void BuildLeagueRosters()
         {
-            for (int i = 1; i < 255; i++)
+            for (int i = 1; i <= 255; i++)
             {
-               ClearLEAGUERoster();
+                ClearLEAGUERoster();
                 CreateRoster(i);
                 SaveRoster(i);
                 ProgressBarStep();
             }
-            //MessageBox.Show("LEAGUE.DAT Rosters Created");
 
             LoadLeagueDAT();
             MessageBox.Show("LEAGUE.DAT Updated");
@@ -704,11 +695,11 @@ namespace DB_EDITOR
 
         private void CreateRoster(int i)
         {
-            if(i >=250 && i <=251) GenerateFantasyRoster(i, 2, true);
+            if (i >= 250 && i <= 251) GenerateFantasyRoster(i, 2, true);
             else GenerateFantasyRoster(i, 0, true);
             RecalculateOverall(true);
             DepthChartMakerSingle("PLAY", i, 136, true);
-            
+
             CompactDB();
         }
 
@@ -754,7 +745,7 @@ namespace DB_EDITOR
                     {
                         byte[] tgidData = File.ReadAllBytes(tgidFile);
                         Buffer.BlockCopy(tgidData, 0, array, offset, Math.Min(tgidData.Length, blockSize));
-                        
+
                     }
 
 
