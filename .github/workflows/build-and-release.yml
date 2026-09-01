@@ -1,41 +1,38 @@
 name: Build and Release
-
 on:
   workflow_dispatch:   # Manual trigger only
-
 permissions:
   contents: write      # required to create releases
-
 jobs:
   build-and-release:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          # Adjust to the version your project needs (e.g. 8.0.x, 9.0.x, etc.)
           dotnet-version: '8.0.x'
-
+      - name: Set release vars
+        id: vars
+        shell: bash
+        run: |
+          echo "date=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+          echo "sha_short=${GITHUB_SHA:0:5}" >> $GITHUB_OUTPUT
       - name: Publish
         run: |
           dotnet publish NCAA_XDBE/NCAA_XDBE.csproj -c Release
-
       - name: Zip the publish folder
         run: |
           Compress-Archive -Path NCAA_XDBE\bin\Release\net8.0-windows\publish\* -DestinationPath NCAA_XDBE.zip
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: release-${{ github.sha }}
-          name: Release ${{ github.sha }}
+          tag_name: release-${{ steps.vars.outputs.date }}-${{ steps.vars.outputs.sha_short }}
+          name: Release ${{ steps.vars.outputs.date }} (${{ steps.vars.outputs.sha_short }})
           body: |
             Manual build from commit ${{ github.sha }}
-            
+
             Download the ZIP and extract it to get the package.
           files: NCAA_XDBE.zip
           draft: false
