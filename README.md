@@ -52,16 +52,16 @@ Only the primary database (`dbSelected 0`) is processed — files with a seconda
  
 ```bat
 :: Export every table to CSV
-DB_EDITOR.exe --open C:\saves\dynasty.dat --export-all C:\out\csv
+NCAA_XDBE.exe --open C:\saves\dynasty.dat --export-all C:\out\csv
  
 :: Import every table, then save
-DB_EDITOR.exe --open C:\saves\dynasty.dat --import-all C:\in\csv --save
+NCAA_XDBE.exe --open C:\saves\dynasty.dat --import-all C:\in\csv --save
  
 :: Save a copy under a new name (no import/export)
-DB_EDITOR.exe --open C:\saves\dynasty.dat --save C:\saves\dynasty_copy.dat
+NCAA_XDBE.exe --open C:\saves\dynasty.dat --save C:\saves\dynasty_copy.dat
  
 :: Tab-delimited round trip
-DB_EDITOR.exe --open C:\saves\dynasty.dat --export-all C:\out\txt --tab-delimited
+NCAA_XDBE.exe --open C:\saves\dynasty.dat --export-all C:\out\txt --tab-delimited
 ```
 
 
