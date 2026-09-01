@@ -1,155 +1,74 @@
 # NCAA Database Editor
 DB/Save Editor for NCAA Football series on PS2/Xbox/PSP/GC Consoles
 
-This editor was designed using original source code from Madden Xtreme DB Editor (elguapo) and MaddenAMP (Colin Goudie/stringray68) and uses tdbaccess library from Artem Khassanov of NHLView.
+Forked version of [NCAA Database Editor](https://github.com/antdroidx/NCAA-DB-Editor) to add custom cli usage of the app
 
-As of August 25, 2025 - this application is designed for x64 only. If you are seeing any issues with display of tables or UI elements, please try changing the Resolution Scaling in Display Settings of Windows. This application is designed for 1440p or below primarily, but it does work on higher resolution but only with certain Res Scaling factor. This is something I am trying to improve on but it's challenging with WinForms...
+## DB Editor — Command Line Usage
+ 
+```
+NCAA_XDBE.exe --open <path> [options]
+```
+ 
+Running the exe with no arguments still launches the normal GUI. Any arguments switch it into CLI mode: it runs headlessly (no window), executes the requested actions, prints status to the console, and exits.
+ 
+## Options
+ 
+| Flag | Description |
+|---|---|
+| `--open <path>` | Path to the database file to open. **Required.** |
+| `--import-all <dir>` | Import every table from CSV/TXT files in `<dir>`. Skips the `TEAM` table — use Addendum for that, same as the UI requires. |
+| `--export-all <dir>` | Export every table to CSV/TXT files in `<dir>`. `<dir>` is created if it doesn't exist. |
+| `--save [path]` | Save changes. If `[path]` is omitted, saves back to the file passed to `--open`. |
+| `--tab-delimited` | Use tab-delimited `.txt` files instead of `.csv` for both `--import-all` and `--export-all`. |
+| `--help` | Show help text. |
+ 
+## Order of operations
+ 
+If multiple actions are given in one call, they always run in this order:
+ 
+1. Open
+2. Import all
+3. Export all
+4. Save
+## Dialogs
+ 
+All confirmation dialogs are answered automatically ("Yes"/"OK") in CLI mode — there's no one there to click them. Status and error messages go to the console instead of a message box.
+ 
+## Exit codes
+ 
+| Code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | Bad/unrecognized arguments |
+| `2` | Failed to open the database file |
+| `3` | Import directory missing or import failed |
+| `5` | Save failed |
+ 
+## Limitations
+ 
+Only the primary database (`dbSelected 0`) is processed — files with a secondary off-season database aren't supported from the CLI yet.
+ 
+## Examples
+ 
+```bat
+:: Export every table to CSV
+DB_EDITOR.exe --open C:\saves\dynasty.dat --export-all C:\out\csv
+ 
+:: Import every table, then save
+DB_EDITOR.exe --open C:\saves\dynasty.dat --import-all C:\in\csv --save
+ 
+:: Save a copy under a new name (no import/export)
+DB_EDITOR.exe --open C:\saves\dynasty.dat --save C:\saves\dynasty_copy.dat
+ 
+:: Tab-delimited round trip
+DB_EDITOR.exe --open C:\saves\dynasty.dat --export-all C:\out\txt --tab-delimited
+```
 
-## Deployment
 
-Publish the application using the modern tooling with:
+## Publish the application:
 
 ```bash
 dotnet publish NCAA_XDBE/NCAA_XDBE.csproj -c Release
 ```
 
-The ClickOnce package is created in the `publish/` directory.
-
-# New Features
-* Added better compatibility with NCAA PS2 Games and PS2 in general as well as PS3/360 game titles that use TDB
-* Ability to view, edit and save NCAA off-season save files  (click Options, Load Off-Season Save, Reload save file)
-* Faster, more optimized database editing, loading, saving, etc.
-* Added DB Tools & Modules
-
-# Available Modules
-
-League Editor
-* Fully Customize Conference, Team, Bowl and Schedules in your own League Setup
-* Ability to edit Dynasties or default League.DAT data to create your own game
-* Requires modding files from game and creating a new game iso rom
-* https://www.ncaanext.com/p/ncaa-db-editor-league-creator.html
-
-Team Editor
-* Fully working Team Editor tab
-* Change College Names
-* Change Prestige Ratings
-* Update NCAA Investigation & Sanctions
-* Stadium Updater
-* Head Coach Editor
-* Playbook and Strategy Editor
-* FIRE COACH button
-* Change User Coach/Team
-* Select Team Captains
-* Select 4 Impact Players
-* Change Team Colors
-* Generate Fantasy Roster per Team
-* Apply DEATH PENALTY
-
-Player Editor
-* Edit Player Names & Attributes
-* Edit Player Gear
-* Force Players to Graduate/Go Pro or Transfer
-* Automatically updates Overall Ratings
-
-Coach Editor
-* Edit Coach names and attributes
-* Change Coach Strategies and Playbooks
-* View Coaching Stats
-* Auto-Adjust Coaching Budgets
-* Coach Prestige Progression
-* Randomize Free Agent Coaches
-* Change Coach Performance
-
-Conference Editor
-* Swap teams between conferences
-* Add/Remove FBS and FCS teams
-* Reschedules as needed
-* Creates fantasy rosters for FCS teams automatically
-
-Schedule Viewer
-* Full Schedule Viewer
-* Team Comparison Chart
-* OOC Re-Scheduler
-
-Stat Viewr
-* Ranking Lists
-* Top Players
-
-Stadium Editor
-* Stadium Editor
-* Realistic Weather Importer
-
-Recruit Editor
-* Edit Recruits
-* Change Interested Teams
-* Change Athletes
-
-Recruiting Tools
-* Team Points Editor
-* Global Interested Teams Editor
-* Randomize Recruits & Walk-Ons
-* Randomize Names
-* Randomize Faces
-* Polynesian Generator
-* Determine Best Athletes
-* Update Recruit Rankings
-
-Transfer Portal
-* Adds a full transfer Portal to DB Editor
-
-Coaching Carousel
-* Adds a full coaching carousel
-* Generate new coaches from existing players
-
-Depth Chart Editor
-* Full Depth Chart Editor
-
-Bowl Editor
-* Edit Bowl Names and matchups
-
-DB Tools
-* Fantasy Roster Generator
-* Depth Chart Automatated Setter
-* Team Rating Calculation
-* Roster Filler
-* Body Size Fixer
-* Speed Enhancer
-* QB Tendency Fixer
-* Randomize Player Potential
-* Randomize Face/Hair/Head
-* Global Ratings Editor
-
-Dynasty Tools (In-Season)
-* Add Pre-Season Injuries with Player Regression
-* Medical Redshirting with Player Regression
-* Coaching Progression/Re-Rating for CPU
-* Coaching Carousel + Coach Leaving Transfer Portal
-* Randomize Coaching Budgets
-* Auto Conference Realignment
-* Transfer Chaos Mode
-* Players -> Coaches
-* Randomize "Free Agent" Coach Prestige
-
-Recruiting Tools (DB2 save!)
-* Redistribute Recruiting Point Minimum
-* Remove Interested Teams from Recruits
-* Randomize Recruits
-* Randomize Walk-Ons
-
-STRMDATA Tools
-* Body Shape Fixer for RCAT Recruiting Database
-* Uniform Editor
-
-Playbook AI Editor
-* Edit AI play calling for each playbook
-
-
-## Notes
-Users can fully customize files in RESOURCES folder to meet the mods they are using! 
-
-## Help
-
-[NCAA Database Editor Manual.docx](https://github.com/user-attachments/files/17964514/NCAA.Database.Editor.Manual.docx)
-
-
-League Editor Instructions: https://www.ncaanext.com/p/ncaa-db-editor-league-creator.html
+The package is created in the `publish/` directory.
