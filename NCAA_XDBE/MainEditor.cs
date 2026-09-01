@@ -246,52 +246,62 @@ namespace DB_EDITOR
         {
             tabControl1.SelectTab(tabHome);
 
-            dbFile = GetFileName("", "All Files|*.*|");
+            string path = GetFileName("", "All Files|*.*|");
+
+            if (path != "")
+                OpenFile(path);
+        }
+
+        /// <summary>
+        /// Opens the database at <paramref name="path"/>. This is the shared logic behind the
+        /// "Open" menu item and the --open CLI flag: the menu handler above owns the file
+        /// picker, everything after "which file did we pick" lives here so both paths behave
+        /// identically. Returns false (and shows/logs an error) if the file couldn't be opened.
+        /// </summary>
+        public bool OpenFile(string path)
+        {
+            dbFile = path;
+            openFileDialog1.FileName = path; // SaveFile() writes back to whatever this holds
 
             if (dbFile.Contains(".psu") || dbFile.Contains(".max"))
             {
-                MessageBox.Show("PSU and MAX Saves from off-season are not supported.\n\nUse at your own risk.\n\nIt is recommended to use save files from Memory Card Folders, or to use PS2 Save Builder to extract the save file from the PSU or MAX Container.");
+                ShowMessage("PSU and MAX Saves from off-season are not supported.\n\nUse at your own risk.\n\nIt is recommended to use save files from Memory Card Folders, or to use PS2 Save Builder to extract the save file from the PSU or MAX Container.");
             }
 
-            if (dbFile != "")
+            CheckDB(dbFile);
+
+            OpenDB();
+
+            if (dbIndex == -1)
             {
-                CheckDB(dbFile);
-
-                OpenDB();
-
-                if (dbIndex == -1)
-                {
-                    MessageBox.Show("Error Opening File.", "DB File Error");
-                    return;
-                }
-
-                if (dbFile != "")
-                    this.Text = "NCAA Next DB Editor  [ " + Path.GetFileName(dbFile) + " ]";
-                else
-                    this.Text = "NCAA Next DB Editor";
-
-                #region Set Buttons
-                openMenuItem.Enabled = false;
-                saveMenuItem.Enabled = true;
-                closeMenuItem.Enabled = true;
-
-                TablePropsgroupBox.Visible = true;
-                FieldsPropsgroupBox.Visible = true;
-                tabControl1.Visible = true;
-
-                #endregion
-
-                CreateExtraFileDataContainers();
-
-
-                //NCAA Football Editor Tabs Check
-
-                if (TDB.TableIndex(dbIndex, "SETL") >= 0) AddPlaybooksTab(); //checks Playbooks first because of SGF table (3 char) causes TDB problems (expecting 4 char)
-                else if (TDB.TableIndex(dbIndex, "AIGR") >= 0 || TDB.FieldIndex(dbIndex, "TEAM", "TMNA") != -1 || TDB.FieldIndex(dbIndex, "PLAY", "PF10") != -1) DBTableAddOns();
-
-                StartHomeTab();
-                ModVersionChecker();
+                ShowMessage("Error Opening File.", "DB File Error");
+                return false;
             }
+
+            this.Text = "NCAA Next DB Editor  [ " + Path.GetFileName(dbFile) + " ]";
+
+            #region Set Buttons
+            openMenuItem.Enabled = false;
+            saveMenuItem.Enabled = true;
+            closeMenuItem.Enabled = true;
+
+            TablePropsgroupBox.Visible = true;
+            FieldsPropsgroupBox.Visible = true;
+            tabControl1.Visible = true;
+
+            #endregion
+
+            CreateExtraFileDataContainers();
+
+
+            //NCAA Football Editor Tabs Check
+
+            if (TDB.TableIndex(dbIndex, "SETL") >= 0) AddPlaybooksTab(); //checks Playbooks first because of SGF table (3 char) causes TDB problems (expecting 4 char)
+            else if (TDB.TableIndex(dbIndex, "AIGR") >= 0 || TDB.FieldIndex(dbIndex, "TEAM", "TMNA") != -1 || TDB.FieldIndex(dbIndex, "PLAY", "PF10") != -1) DBTableAddOns();
+
+            StartHomeTab();
+            ModVersionChecker();
+            return true;
         }
 
         public string GetFileName(string ext, string filter)
@@ -464,64 +474,70 @@ namespace DB_EDITOR
 
         private void SaveMenuItem_Click(object sender, EventArgs e)
         {
-            if (SaveDB(dbSelected))
+            SaveFile(openFileDialog1.FileName);
+        }
+
+        /// <summary>
+        /// Saves to <paramref name="outputPath"/>. Shared by the "Save" menu item (which always
+        /// passes back the file that was opened) and the --save CLI flag (which can point at a
+        /// different output path than the one that was opened). Returns false on failure.
+        /// </summary>
+        public bool SaveFile(string outputPath)
+        {
+            if (!SaveDB(dbSelected)) return false;
+
+            SaveDB(0);
+            if (dbIndex2 == 1) SaveDB(1);
+
+            #region Compile Console Data and DB information.
+            byte[] db1, db2;
+
+            BinaryWriter binwriter = new BinaryWriter(File.Open(outputPath, FileMode.Create));
+
+            // Add pre-DB data 
+            if (binData.Count > 0)
+                for (int i = 0; i < binData.Count; i++)
+                {
+                    binwriter.Write(binData[i]);
+                }
+
+            // Add DB data.
+            db1 = File.ReadAllBytes(dbFile);
+
+            if (db1.Length > 0)
+                for (int i = 0; i < db1.Length; i++)
+                {
+                    binwriter.Write(db1[i]);
+                }
+
+            // add DB2 data.
+            if (dbIndex2 == 1)
             {
-                SaveDB(0);
-                if (dbIndex2 == 1) SaveDB(1);
-
-                #region Compile Console Data and DB information.
-                byte[] db1, db2;
-
-                BinaryWriter binwriter = new BinaryWriter(File.Open(openFileDialog1.FileName, FileMode.Create));
-
-                // Add pre-DB data 
-                if (binData.Count > 0)
-                    for (int i = 0; i < binData.Count; i++)
-                    {
-                        binwriter.Write(binData[i]);
-                    }
-
-                // Add DB data.
-                db1 = File.ReadAllBytes(dbFile);
-
-                if (db1.Length > 0)
-                    for (int i = 0; i < db1.Length; i++)
-                    {
-                        binwriter.Write(db1[i]);
-                    }
-
-                // add DB2 data.
-                if (dbIndex2 == 1)
+                db2 = File.ReadAllBytes(dbFile2);
+                for (int i = 0; i < db2.Length; i++)
                 {
-                    db2 = File.ReadAllBytes(dbFile2);
-                    for (int i = 0; i < db2.Length; i++)
-                    {
-                        binwriter.Write(db2[i]);
-                    }
+                    binwriter.Write(db2[i]);
                 }
-
-
-                // add Post-DB data
-                if (psuExtras.Count > 0)
-                {
-                    for (int i = 0; i < psuExtras.Count; i++)
-                    {
-                        binwriter.Write(psuExtras[i]);
-                    }
-                }
-
-                binwriter.Dispose();
-                binwriter.Close();
-
-
-
-                #endregion
-
-
-
-                MessageBox.Show(Path.GetFileName(openFileDialog1.FileName) + " saved!", "Save File");
-                DBModified = false;
             }
+
+
+            // add Post-DB data
+            if (psuExtras.Count > 0)
+            {
+                for (int i = 0; i < psuExtras.Count; i++)
+                {
+                    binwriter.Write(psuExtras[i]);
+                }
+            }
+
+            binwriter.Dispose();
+            binwriter.Close();
+
+            #endregion
+
+            ShowMessage(Path.GetFileName(outputPath) + " saved!", "Save File");
+            DBModified = false;
+            return true;
         }
 
         public bool SaveDB(int DBIndex)
@@ -530,7 +546,7 @@ namespace DB_EDITOR
             TDB.TDBDatabaseCompact(DBIndex);
             if (!TDB.TDBSave(DBIndex))
             {
-                MessageBox.Show("Error Saving File.", "DB Save File Error");
+                ShowMessage("Error Saving File.", "DB Save File Error");
                 return false;
             }
             else
@@ -572,7 +588,7 @@ namespace DB_EDITOR
         {
             if (!TDB.TDBClose(DBIndex))
             {
-                MessageBox.Show("Error Closing File.", "DB Close File Error");
+                ShowMessage("Error Closing File.", "DB Close File Error");
                 return false;
             }
             else return true;
@@ -631,12 +647,25 @@ namespace DB_EDITOR
 
         private void exportAllMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("This will export every table in this database and may take some time depending on the size of the database. Do you want to proceed?", "Export All Tables", MessageBoxButtons.YesNo);
+            ExportAllTables();
+        }
+
+        /// <summary>
+        /// Exports every table in the currently selected database as CSV/TXT. Shared by the
+        /// "Export All" menu item and the --export-all CLI flag. To redirect where files land
+        /// (as the CLI does), set cliExportAllDir before calling this - see MainEditor.Cli.cs.
+        /// </summary>
+        public void ExportAllTables()
+        {
+            DialogResult confirm = ShowMessage("This will export every table in this database and may take some time depending on the size of the database. Do you want to proceed?", "Export All Tables", MessageBoxButtons.YesNo);
 
             StartProgressBar(TDB.TableCount(dbSelected));
 
-            if (DialogResult == System.Windows.Forms.DialogResult.No) return;
-
+            // NOTE: this used to check the Form's own DialogResult property instead of the
+            // MessageBox's answer above, so clicking "No" never actually stopped the export.
+            // Fixed here to actually respect the answer (ShowMessage always answers "Yes" in
+            // CLI mode, per the requirement that CLI runs never wait on a dialog).
+            if (confirm == DialogResult.No) return;
 
             // TdbTableProperties class
             TdbTableProperties TableProps = new TdbTableProperties();
@@ -660,52 +689,60 @@ namespace DB_EDITOR
                 ProgressBarStep();
             }
             exportAll = false;
-            MessageBox.Show("Export Complete", "Export All Tables");
+            ShowMessage("Export Complete", "Export All Tables");
             EndProgressBar();
         }
 
         private void importAllMenuItem_Click(object sender, EventArgs e)
         {
+            ImportAllTables();
+        }
 
-            string executableLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string csvLocation = Path.Combine(executableLocation, SelectedTableName + ".csv");
-            if (tabDelimited) csvLocation = Path.Combine(executableLocation, SelectedTableName + ".txt");
+        /// <summary>
+        /// Imports every table (except TEAM - use Addendum for that, same rule the UI already
+        /// follows) from CSV/TXT files named after each table. Shared by the "Import All" menu
+        /// item, which reads from the app's own folder, and the --import-all CLI flag, which
+        /// reads from cliImportAllDir instead - see MainEditor.Cli.cs, and the matching source
+        /// folder logic inside ImportDB() in ImportTool.cs.
+        /// </summary>
+        public void ImportAllTables()
+        {
+            string baseDir = !string.IsNullOrEmpty(cliImportAllDir)
+                ? cliImportAllDir
+                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-
-            if (File.Exists(csvLocation))
+            // Just confirms the source folder exists before starting the loop - each table's
+            // own CSV/TXT presence is checked individually inside ImportDB().
+            if (!Directory.Exists(baseDir))
             {
-
-
-                // TdbTableProperties class
-                TdbTableProperties TableProps = new TdbTableProperties();
-
-                // 4 character string, max value of 5
-                TableProps.Name = new string((char)0, 5);
-
-                exportAll = true;
-                for (int i = 0; i < TDB.TDBDatabaseGetTableCount(dbSelected); i++)
-                {
-                    // Init the tdbtableproperties name
-                    TableProps.Name = new string((char)0, 5);
-
-                    // Get the tableproperties for the given table number
-                    if (TDB.TDBTableGetProperties(dbSelected, i, ref TableProps))
-                    {
-                        SelectedTableName = TableProps.Name;
-                        SelectedTableIndex = i;
-
-                        if (TableProps.Name != "TEAM")
-                            importTableMenuItem.PerformClick();
-                    }
-                }
-                exportAll = false;
-                MessageBox.Show("Import Complete", "Import All Tables");
-            }
-            else
-            {
-                MessageBox.Show("No importable files found in the DB Editor directory");
+                ShowMessage("No importable files found in the DB Editor directory");
                 return;
             }
+
+            // TdbTableProperties class
+            TdbTableProperties TableProps = new TdbTableProperties();
+
+            // 4 character string, max value of 5
+            TableProps.Name = new string((char)0, 5);
+
+            exportAll = true;
+            for (int i = 0; i < TDB.TDBDatabaseGetTableCount(dbSelected); i++)
+            {
+                // Init the tdbtableproperties name
+                TableProps.Name = new string((char)0, 5);
+
+                // Get the tableproperties for the given table number
+                if (TDB.TDBTableGetProperties(dbSelected, i, ref TableProps))
+                {
+                    SelectedTableName = TableProps.Name;
+                    SelectedTableIndex = i;
+
+                    if (TableProps.Name != "TEAM")
+                        importTableMenuItem.PerformClick();
+                }
+            }
+            exportAll = false;
+            ShowMessage("Import Complete", "Import All Tables");
         }
 
         private void ExportSelectedMenuItem_Click(object sender, EventArgs e)

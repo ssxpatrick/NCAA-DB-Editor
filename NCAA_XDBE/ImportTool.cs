@@ -16,7 +16,7 @@ namespace DB_EDITOR
 
             if (SelectedTableName == "TEAM" && TDB.TDBDatabaseGetTableCount(dbSelected) > 50 && !addendum)
             {
-                MessageBox.Show("DO NOT USE IMPORT CSV FUNCTION FOR TEAM TABLE.\n\nPlease use Addendum instead and DO NOT IMPORT TPIP and JJNM COLUMNS!");
+                ShowMessage("DO NOT USE IMPORT CSV FUNCTION FOR TEAM TABLE.\n\nPlease use Addendum instead and DO NOT IMPORT TPIP and JJNM COLUMNS!");
                 return;
             }
 
@@ -25,7 +25,11 @@ namespace DB_EDITOR
 
             if (exportAll)
             {
-                string executableLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                // cliImportAllDir is set by RunCliCommands() for --import-all; otherwise this
+                // keeps the original behavior of reading from the exe's own folder.
+                string executableLocation = !string.IsNullOrEmpty(cliImportAllDir)
+                    ? cliImportAllDir
+                    : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string csvLocation = Path.Combine(executableLocation, SelectedTableName + ".csv");
 
                 if (tabDelimited) csvLocation = Path.Combine(executableLocation, SelectedTableName + ".txt");
@@ -33,7 +37,7 @@ namespace DB_EDITOR
                 if (File.Exists(csvLocation)) myStream = new FileStream(csvLocation, FileMode.Open, FileAccess.Read);
                 else
                 {
-                    MessageBox.Show("No importable files found in the DB Editor directory");
+                    ShowMessage("No importable files found in the DB Editor directory");
                     return;
                 }
             }

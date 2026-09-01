@@ -10,7 +10,7 @@ namespace DB_EDITOR
         {
             if (commaPresent && !tabDelimited)
             {
-                DialogResult dialogResult = MessageBox.Show("This database table contains commas in string fields. Exporting to a comma delimited (CSV) file may cause data misalignment. Please use TAB DELIMITED option instead!\n\n\n Do you want to proceed?", "Commas Detected!", MessageBoxButtons.YesNo);
+                DialogResult dialogResult = ShowMessage("This database table contains commas in string fields. Exporting to a comma delimited (CSV) file may cause data misalignment. Please use TAB DELIMITED option instead!\n\n\n Do you want to proceed?", "Commas Detected!", MessageBoxButtons.YesNo);
                 if (dialogResult == DialogResult.No)
                 {
                     return;
@@ -36,8 +36,16 @@ namespace DB_EDITOR
             }
             else
             {
-                string filename = SelectedTableName + ".csv";
-                string fullPath = Path.Combine(seasonFolder, filename);
+                // Original code always wrote ".csv" here even when tabDelimited was set, so a
+                // tab-delimited export-all wrote tab-separated content into a ".csv"-named file
+                // - which ImportDB() then couldn't find again (it looks for ".txt" in that
+                // case). Fixed so export-all/import-all round-trip correctly either way.
+                string filename = SelectedTableName + (tabDelimited ? ".txt" : ".csv");
+
+                // cliExportAllDir is set by RunCliCommands() for --export-all; otherwise this
+                // keeps the original seasonFolder-based behavior used elsewhere in the app.
+                string exportDir = !string.IsNullOrEmpty(cliExportAllDir) ? cliExportAllDir : seasonFolder;
+                string fullPath = Path.Combine(exportDir, filename);
                 myStream = File.Create(fullPath);
             }
 
@@ -201,13 +209,13 @@ namespace DB_EDITOR
                         wText.Close();
 
                         if (!exportAll)
-                            MessageBox.Show(Path.GetFileNameWithoutExtension(SaveDialog1.FileName) + Path.GetExtension(SaveDialog1.FileName).ToLower() + " saved.", "Export");
+                            ShowMessage(Path.GetFileNameWithoutExtension(SaveDialog1.FileName) + Path.GetExtension(SaveDialog1.FileName).ToLower() + " saved.", "Export");
 
                     }
                 }
                 catch (IOException err)
                 {
-                    MessageBox.Show("Error opening file\r\n\r\n Check that the file is not already opened", "Error opening file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ShowMessage("Error opening file\r\n\r\n Check that the file is not already opened", "Error opening file", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 #pragma warning restore CS0168 // Variable is declared but never used
 
